@@ -1,11 +1,7 @@
 #Purpose:
-#Script to run Adaptive Population Monte Carlo Approximate Bayesian Computation
+#Script to run series of flu epidemics from 2009/10 upto 2019/20
 #Run serially & take arguments from command line as function inputs
 
-#Fit multi-strain, non-age structured influenza transmission model
-#(with immunity propagation) to empirical data
-
-#Code Author: Ed Hill
 #-------------------------------------------------------------------------------
 #--------------------------------------------------------------------------
 # ADD FILES TO SEARCH PATH FOR ODES/MODEL RUN FUNCTION
@@ -36,7 +32,8 @@ outdir = "output/"
 ARGS = c("1600", # RunID
          "data/PSA_data/ILIData/EmpData_InfluenzaPositiveGPConsultRateByStrain_2009to2018.csv", # Hospitalization data
          "11", # Number of influenza seasons to simulate from 2009/2010 onwards (e.g. 7 will be up to and inc. 2015/16)
-         "RunModelSimn" #APMC related functions
+         "RunModelSimn", # Functions to run flu model
+         "new_VE_3"#Scenario label #"historic" if running historical data
          )
 #--------------------------------------------------------------------------
 # Set RunID idx
@@ -69,13 +66,10 @@ if (IntCheck == 0 || SeasonsToSimulate <= 0 || (SeasonsToSimulate > MaxSeasonNum
 #Row 4 corresponds to 2012/13 influenza season, row 5 to 2013/14 influenza season etc
 ObvsData = ObvsDataTemp[(4:(nrow(ObvsDataTemp)-SeasonsUnused)),]
 
-#--------------------------------------------------------------------------
-# SET UP APMC SCHEME RELATED PARAMETERS
-#--------------------------------------------------------------------------
 s_5 = ARGS[4] #Convert string to Symbol
-#Make Symbols callable functions
-ModelSimnFn = get(s_5) #Model simulation
+ModelSimnFn = get(s_5) #Make symbols callable functions for simulation
 
+scenario_lb = ARGS[5] # Scenario label
 
 #-------------------------------------------------------------------------------
 # SPECIFY TYPE OF RUN THROUGH FLAG VARIABLE
@@ -93,6 +87,7 @@ ExpHistVaccType = 1
 
 if (ExpHistVaccType != 0 && ExpHistVaccType !=1){
   stop("ExpHistVaccType must take value 0 or 1")}
+
 
 
 #--------------------------------------------------------------------------
@@ -212,7 +207,8 @@ DeathParam = d
     
     
     #RUN ALTERNATIVE VACC. SCHEMES
-    VaccEfficacyDataFrame = read.xlsx(paste0(path,"data/PSA_data/VaccEfficacy/VaccEfficacy_AllPopn.xlsx"),sheet="MidPoint", colNames = F, rows = c(3:13), cols = c(3:6))
+    #VaccEfficacyDataFrame = read.xlsx(paste0(path,"data/PSA_data/VaccEfficacy/VaccEfficacy_AllPopn.xlsx"),sheet="MidPoint", colNames = F, rows = c(3:13), cols = c(3:6))
+    VaccEfficacyDataFrame = read.xlsx(paste0(path,"data/PSA_data/VaccEfficacy/VaccEfficacy_AllPopn_matchnomatch.xlsx"),sheet=scenario_lb, colNames = F, rows = c(3:13), cols = c(3:6))
     
     # Collate into Array
     VaccEfficacyUpTo2020 = as.matrix(VaccEfficacyDataFrame)
@@ -271,7 +267,7 @@ DeathParam = d
     #--------------------------------------------------------------------------
     # SET END-OF-GENERATION OUTPUT TEXT FILE INFO
     #--------------------------------------------------------------------------
-    OutputFileName = "output/EndOfGenAPMC_"
+    OutputFileName = paste0("output/",scenario_lb)
     
     #ObservedData = ObvsData # TODO: delete this 
     #SampleFirstGenFn = SampleFromPriorFn#TODO: delete this
@@ -282,26 +278,27 @@ DeathParam = d
     # Read the best parameter set from calibration 
     b_param_unscaled <- read.csv("data/b_param_unscaled_8seasons.csv")
     b_param_unscaled <- b_param_unscaled[,-c(1)]
-    b_param_unscaled <- cbind(b_param_unscaled[1:6], 0, b_param_unscaled[1,7:length(b_param_unscaled)])
+    b_param_unscaled <- cbind(b_param_unscaled[1:6], 0, # 1-4: Infection parameters, 5-7: Exposure history parameters
+                              b_param_unscaled[7:length(b_param_unscaled)])  # 8.. : Ascertainment rate (assumed 09/10 and 10/11 season's rate is the same as in 11/12 season)
     b_param_unscaled = as.vector(t(b_param_unscaled))
     #b_param_unscaled[8:length(b_param_unscaled)] = 1 # set no assertainment
     
     
-#    VaccEfficacy2010To2020 = VaccEfficacyUpTo2020[c(2:nrow(VaccEfficacyUpTo2020)),]
+    #VaccEfficacy2010To2020 = VaccEfficacyUpTo2020[c(2:nrow(VaccEfficacyUpTo2020)),]
     #Get mean efficacy value per strain, from the the historic flu seasons 2010/2011-2017/2018 to extrapolate vax eff
- #   MeanEffVals = apply(VaccEfficacy2010To2020,2,mean) #findmax(VaccEfficacyUpTo2018[2:nrow(VaccEfficacyUpTo2018),],1)[1]
- #   VaccEfficacy[(nrow(VaccEfficacyUpTo2020)+1):nrow(VaccEfficacy),] = matrix(rep(MeanEffVals, SeasonsToSimulate - nrow(VaccEfficacyUpTo2020)),ncol=4, byrow = TRUE) 
- #   VaccEfficacy[(nrow(VaccEfficacyUpTo2020)+2):nrow(VaccEfficacy),] = VaxEffFactor*matrix(rep(MeanEffVals, SeasonsToSimulate - nrow(VaccEfficacyUpTo2020)-1),ncol=4, byrow = TRUE) 
+    #MeanEffVals = apply(VaccEfficacy2010To2020,2,mean) #findmax(VaccEfficacyUpTo2018[2:nrow(VaccEfficacyUpTo2018),],1)[1]
+    #VaccEfficacy[(nrow(VaccEfficacyUpTo2020)+1):nrow(VaccEfficacy),] = matrix(rep(MeanEffVals, SeasonsToSimulate - nrow(VaccEfficacyUpTo2020)),ncol=4, byrow = TRUE) 
+    #VaccEfficacy[(nrow(VaccEfficacyUpTo2020)+2):nrow(VaccEfficacy),] = VaxEffFactor*matrix(rep(MeanEffVals, SeasonsToSimulate - nrow(VaccEfficacyUpTo2020)-1),ncol=4, byrow = TRUE) 
     
     #Pass updated vaccine efficacy array into FixedModelParams
-    FixedModelParams[[13]] = t(VaccEfficacy)
+    #FixedModelParams[[13]] = t(VaccEfficacy)
     
     SimnData = ModelSimnFn(FixedModelParams,b_param_unscaled)
     ratebystrain <- SimnData[[1]]
     tot_I <- SimnData[[2]]
     immunehist <- SimnData[[4]]
-    write.csv(ratebystrain, paste0(outdir, "ratebystrain_Vaxeff",VaxEffFactor,"_VaxUp",VaxUpFactor,".csv"))
-    write.csv(tot_I, paste0(outdir, "tot_I_Vaxeff",VaxEffFactor,"_VaxUp",VaxUpFactor,".csv"))
-    write.csv(immunehist, paste0(outdir, "immunehist_Vaxeff",VaxEffFactor,"_VaxUp",VaxUpFactor,".csv"))
+    write.csv(ratebystrain, paste0(outdir, "ratebystrain","(",scenario_lb,")",".csv"))
+    write.csv(tot_I, paste0(outdir, "tot_I","(",scenario_lb,")",".csv"))
+    write.csv(immunehist, paste0(outdir, "immunehist","(",scenario_lb,")",".csv"))
 #  }
 #}

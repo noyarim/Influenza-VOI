@@ -115,9 +115,9 @@ SeasonalFluModelODEs_LeakyVacc <- function(t,pop,parameters){
   for (i in seq(1:NumOfStrains)){
     #---------------------------------------------------------------------------
     ### ODE for each non-susceptible, non-vaccinated compartment (E_NotV, I_NotV, R_NotV)
-    dPop[(SusODENum+i)]= beta[i]*sum(ExpHistArray[i,]*S_NotV)*I[i] - sigma[i]*E_NotV[i] - D*E_NotV[i] - mu*E_NotV[i]
-    dPop[(SusODENum+NumOfStrains+i)]= sigma[i]*E_NotV[i] - gamma[i]*I_NotV[i] - D*I_NotV[i] - mu*I_NotV[i]
-    dPop[(SusODENum+(2*NumOfStrains)+i)]= gamma[i]*I_NotV[i] - D*R_NotV[i] - mu*R_NotV[i]
+    dPop[(SusODENum+i)]= beta[i]*sum(ExpHistArray[i,]*S_NotV)*I[i] - sigma[i]*E_NotV[i] - D*E_NotV[i] - mu*E_NotV[i] # E_NotV
+    dPop[(SusODENum+NumOfStrains+i)]= sigma[i]*E_NotV[i] - gamma[i]*I_NotV[i] - D*I_NotV[i] - mu*I_NotV[i] # I_NotV
+    dPop[(SusODENum+(2*NumOfStrains)+i)]= gamma[i]*I_NotV[i] - D*R_NotV[i] - mu*R_NotV[i] # R_NotV
     
     #---------------------------------------------------------------------------
     ### ODE for each non-susceptible, vaccinated compartment (E_V, I_V, R_V)

@@ -237,14 +237,13 @@ RunModelSimn <- function(FixedModelParams,x){
   #----------------------------------------------------------------------
   ### Get ascertainable cases, based on ascertainment prob type
   #----------------------------------------------------------------------
-  AscertainProb = x[8:length(x)] #Parameter values from LHC file
-  
+  AscertainProb = tail(x,RetainedSeasonNum-3) #Parameter values from LHC file
   #Forward simulation modifications
   #Save counts unmodified by ascertainment probabilities
   if (SimnRunType == 3){
     StrainSeasonRatePerStrain = StrainSeasonRateTotalSum_FitCheckSeasons
   } else{
-    StrainSeasonRatePerStrain = matrix(0,RetainedSeasonNum,4) #Initialise storage array
+    StrainSeasonRatePerStrain = matrix(0,RetainedSeasonNum-3,NumOfStrains) #Initialise storage array
     
     #Update ascertainable amount per strain
     FluToGPconversion = 100000*AscertainProb #Scale to rate per 100,000 popualation
