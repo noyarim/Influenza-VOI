@@ -243,6 +243,7 @@ RunModelSimn <- function(FixedModelParams,x){
   if (SimnRunType == 3){
     StrainSeasonRatePerStrain = StrainSeasonRateTotalSum_FitCheckSeasons
   } else{
+    #StrainSeasonRatePerStrain = StrainSeasonRateTotalSum_FitCheckSeasons
     StrainSeasonRatePerStrain = matrix(0,RetainedSeasonNum-3,NumOfStrains) #Initialise storage array
     
     #Update ascertainable amount per strain

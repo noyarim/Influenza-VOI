@@ -3,16 +3,6 @@
 #Run serially & take arguments from command line as function inputs
 
 #-------------------------------------------------------------------------------
-#--------------------------------------------------------------------------
-# ADD FILES TO SEARCH PATH FOR ODES/MODEL RUN FUNCTION
-#--------------------------------------------------------------------------
-
-setwd("/Users/kyueunlee/Library/CloudStorage/GoogleDrive-leex5499@umn.edu/My Drive/Z Drive/Project_all/2022_FluVOI/Influenza-VOI")
-source("R/01_RunSeasonalFluModelODEs.R")
-source("R/02_ExpHistUpdate.R")
-source("R/03_SeasonalFluModel_Fns.R")
-
-
 #-------------------------------------------------------------------------------
 # LOAD REQUIRED PACKAGES
 #-------------------------------------------------------------------------------
@@ -27,13 +17,24 @@ library(MASS)
 library(mvtnorm)
 
 
+#--------------------------------------------------------------------------
+# ADD FILES TO SEARCH PATH FOR ODES/MODEL RUN FUNCTION
+#--------------------------------------------------------------------------
+
+setwd("/Users/kyueunlee/Library/CloudStorage/GoogleDrive-leex5499@umn.edu/My Drive/Z Drive/Project_all/2022_FluVOI/Influenza-VOI")
+source("R/01_RunSeasonalFluModelODEs.R")
+source("R/02_ExpHistUpdate.R")
+source("R/03_SeasonalFluModel_Fns.R")
+
+
+
 outdir = "output/"
 
 ARGS = c("1600", # RunID
          "data/PSA_data/ILIData/EmpData_InfluenzaPositiveGPConsultRateByStrain_2009to2018.csv", # Hospitalization data
          "11", # Number of influenza seasons to simulate from 2009/2010 onwards (e.g. 7 will be up to and inc. 2015/16)
          "RunModelSimn", # Functions to run flu model
-         "new_VE_3"#Scenario label #"historic" if running historical data
+         "new_VE2_2019" #new_VE_3"#Scenario label #"old_VE" if running historical data,
          )
 #--------------------------------------------------------------------------
 # Set RunID idx
@@ -70,7 +71,6 @@ s_5 = ARGS[4] #Convert string to Symbol
 ModelSimnFn = get(s_5) #Make symbols callable functions for simulation
 
 scenario_lb = ARGS[5] # Scenario label
-
 #-------------------------------------------------------------------------------
 # SPECIFY TYPE OF RUN THROUGH FLAG VARIABLE
 #-------------------------------------------------------------------------------
@@ -209,7 +209,7 @@ DeathParam = d
     #RUN ALTERNATIVE VACC. SCHEMES
     #VaccEfficacyDataFrame = read.xlsx(paste0(path,"data/PSA_data/VaccEfficacy/VaccEfficacy_AllPopn.xlsx"),sheet="MidPoint", colNames = F, rows = c(3:13), cols = c(3:6))
     VaccEfficacyDataFrame = read.xlsx(paste0(path,"data/PSA_data/VaccEfficacy/VaccEfficacy_AllPopn_matchnomatch.xlsx"),sheet=scenario_lb, colNames = F, rows = c(3:13), cols = c(3:6))
-    
+
     # Collate into Array
     VaccEfficacyUpTo2020 = as.matrix(VaccEfficacyDataFrame)
     
@@ -296,9 +296,11 @@ DeathParam = d
     SimnData = ModelSimnFn(FixedModelParams,b_param_unscaled)
     ratebystrain <- SimnData[[1]]
     tot_I <- SimnData[[2]]
+    tot_I_strain <- SimnData[[3]]
     immunehist <- SimnData[[4]]
     write.csv(ratebystrain, paste0(outdir, "ratebystrain","(",scenario_lb,")",".csv"))
     write.csv(tot_I, paste0(outdir, "tot_I","(",scenario_lb,")",".csv"))
-    write.csv(immunehist, paste0(outdir, "immunehist","(",scenario_lb,")",".csv"))
+    write.csv(tot_I_strain, paste0(outdir, "tot_I_strain","(",scenario_lb,")",".csv"))
+    #write.csv(immunehist, paste0(outdir, "immunehist","(",scenario_lb,")",".csv"))
 #  }
 #}
